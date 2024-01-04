@@ -3,6 +3,15 @@ import {Pressable, SafeAreaView, StyleSheet, Text, View} from 'react-native';
 import {router, Stack} from "expo-router";
 import {FontAwesome5} from '@expo/vector-icons';
 import {StatusBar} from "expo-status-bar";
+import {GestureDetector, Gesture, Directions} from 'react-native-gesture-handler';
+import Animated, {
+    FadeIn,
+    FadeOut,
+    BounceInRight,
+    SlideOutLeft,
+    BounceOutLeft,
+    SlideInRight
+} from 'react-native-reanimated';
 
 type OnboardingScreenPropsType = {}
 
@@ -45,32 +54,57 @@ const OnboardingScreen = ({}: OnboardingScreenPropsType) => {
         }
     };
 
+    const onBack = () => {
+        const isFirstScreen = screenIndex === 0;
+        if (isFirstScreen) {
+            endOnboarding();
+        } else {
+            setScreenIndex(screenIndex - 1);
+        }
+    };
+
+    const swipes = Gesture.Simultaneous(
+        Gesture.Fling().direction(Directions.LEFT).onEnd(onContinue),
+        Gesture.Fling().direction(Directions.RIGHT).onEnd(onBack)
+    );
+
     return (
         <SafeAreaView style={styles.container}>
             <Stack.Screen options={{headerShown: false}}/>
-            <StatusBar style="light" />
-            <View style={styles.wrapper}>
-                <View style={styles.stepIndicatorContainer}>
-                    {onboardingSteps.map((item, index) =>
-                        <View key={item.icon}
-                              style={[styles.stepIndicator, {backgroundColor: index === screenIndex ? "#CEF202" : "grey"}]}/>
-                    )}
-                </View>
-                <FontAwesome5 name={data.icon} color={"#CEF202"} size={150} style={styles.image}/>
-                <View style={styles.footer}>
-                    <Text style={styles.title}>{data.title}</Text>
-                    <Text style={styles.subtitle}>{data.description}</Text>
-                    <View style={styles.buttonsRow}>
-                        <Text onPress={endOnboarding} style={styles.buttonText}>
-                            Skip
-                        </Text>
-
-                        <Pressable onPress={onContinue} style={styles.button}>
-                            <Text style={styles.buttonText}>Continue</Text>
-                        </Pressable>
+            <StatusBar style="light"/>
+            <View style={styles.stepIndicatorContainer}>
+                {onboardingSteps.map((item, index) =>
+                    <View key={item.icon}
+                          style={[styles.stepIndicator, {backgroundColor: index === screenIndex ? "#CEF202" : "grey"}]}/>
+                )}
+            </View>
+            <GestureDetector gesture={swipes}>
+                <View key={screenIndex} style={styles.wrapper}>
+                    <Animated.View entering={FadeIn} exiting={FadeOut}>
+                        <FontAwesome5 name={data.icon} color={"#CEF202"} size={150} style={styles.image}/>
+                    </Animated.View>
+                    <View style={styles.footer}>
+                        <Animated.Text
+                            entering={SlideInRight}
+                            exiting={SlideOutLeft} style={styles.title}>
+                            {data.title}
+                        </Animated.Text>
+                        <Animated.Text
+                            entering={SlideInRight.delay(50)}
+                            exiting={SlideOutLeft} style={styles.subtitle}>
+                            {data.description}
+                        </Animated.Text>
+                        <View style={styles.buttonsRow}>
+                            <Text onPress={endOnboarding} style={styles.buttonText}>
+                                Skip
+                            </Text>
+                            <Pressable onPress={onContinue} style={styles.button}>
+                                <Text style={styles.buttonText}>Continue</Text>
+                            </Pressable>
+                        </View>
                     </View>
                 </View>
-            </View>
+            </GestureDetector>
         </SafeAreaView>
     );
 };
@@ -137,8 +171,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'gray',
         borderRadius: 10,
     },
-
-
 });
 
 
